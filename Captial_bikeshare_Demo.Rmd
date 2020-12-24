@@ -1,0 +1,140 @@
+---
+title: "Capital Bikeshare Demo"
+author: "Dataphilers"
+date: "11/25/2019"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r basicfcn, include=F}
+# can add quietly=T option to the require() function
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+```
+
+```{r train_model}
+#Trained Model of various models are loaded
+loadPkg("randomForest")
+loadPkg("caret")
+rf_fit_demo <- readRDS("./Saved Models/RandomForest_train.rds")
+rf_gridsearch_demo <- readRDS("./Saved Models/RandomForest_train_gridsearch.rds")
+lm_fit_full <- readRDS("./Saved Models/lm_full.rds")
+lm_fit_Reduced <- readRDS("./Saved Models/lm_reduced.rds")
+#bagged_tree <- readRDS("./Saved Models/baggedTree.rds")
+tuned_tree <- readRDS("./Saved Models/tunedDecisionTree.rds")
+```
+
+
+```{r demo_set}
+#Sample Dataset is taken from dataset and dataset is prepreocessed to predict the results
+Demo_df <- read.csv("./Demo_set.csv")
+names(Demo_df) <- c("Condition","Temp","Dew","Humidity","Windspeed","Holiday","Weekday","TimeofDay","Season","HourOfDay","Total_Bikes")
+Demo_df$Holiday <- as.factor(Demo_df$Holiday)
+Demo_df$HourOfDay <- as.factor(Demo_df$HourOfDay)
+```
+
+```{r trained_model}
+#using trained model, run prediction on demo dataset
+pred_lmf <- predict(lm_fit_full,Demo_df[1:10])
+pred_lmr <- predict(lm_fit_Reduced,Demo_df[1:10])
+#pred_bag <- predict(bagged_tree,Demo_df[1:10])
+pred_tunedbag <- predict(tuned_tree,Demo_df[1:10])
+pred_grid <- predict(rf_gridsearch_demo,Demo_df[1:10])
+pred_rf <- predict(rf_fit_demo,Demo_df[1:10])
+```
+
+```{r add_pred}
+# append results to the original demo dataset for comparison purposes
+Demo_df$pred_lmf <- pred_lmf
+Demo_df$pred_lmr <- pred_lmr
+Demo_df$pred_tunedbag <- pred_tunedbag
+Demo_df$pred_grid <- pred_grid
+Demo_df$pred_rf <- pred_rf
+```
+
+
+### Bike Demand Prediction Accuracy on varying Humidity and Windspeed
+
+Humidity and Windspeed based on our analysis are *non-dominant* feature variables. Let's analyse how our model predicts the demand of bikes when all other variables are fixed but humidity and windspeed are changed.
+
+The sample input shows that all variables are fixed except Humidity and Windspeed: 
+
+```{r sample_Set_Hour}
+loadPkg("kableExtra")
+Demo_df[1:2,c(1:10)] %>% kableExtra::kable() %>% kableExtra::kable_styling()
+```
+
+The prediction of different models are shown below:
+
+```{r Non_des}
+Demo_df[1:2,c(11:16)] %>% kableExtra::kable(col.names = c("Actual Bike Demand","Full Linear Model","Reduced Linear Model","Decision Tree","Grid Search Random Forest","Random Forest")) %>% kableExtra::kable_styling()
+```
+
+The 3 variable Random Forest i.e. the last column has the closest predictions, second closest model in this scenario is Random Forest (Using Grid Search).
+
+----
+
+### Bike Demand Prediction Accuracy on varying Hour Of the Day
+
+We know that *Hour of the day* variable is a dominant feature with Hour of day - 18 being the most important level. We want to see how our created models predict when Hour of the day is varied and other variables are kept constant.
+
+Sample Input Set : 
+
+```{r varying_hour}
+Demo_df[3:8,c(1:10)] %>% kableExtra::kable(row.names = FALSE) %>% kableExtra::kable_styling()
+```
+
+The prediction of different models are shown below:
+
+```{r predict_val}
+Demo_df[3:8,c(11:16)] %>% kableExtra::kable(col.names = c("Actual Bike Demand","Full Linear Model","Reduced Linear Model","Decision Tree","Grid Search Random Forest","Random Forest"),row.names = FALSE) %>% kableExtra::kable_styling()
+```
+
+From the results, we notice that 3-variable random forest (i.e. last column) performs the best.
+
+----
+
+### Bike Demand Prediction Accuracy for Weekdays and Weekends
+
+We want to verify how well our created models predict the demand for bikes on weekdays and weekends.
+
+Sample Input Set:
+
+```{r weekday}
+Demo_df[9:10,c(1:10)] %>% kableExtra::kable(row.names = FALSE) %>% kableExtra::kable_styling()
+```
+
+The prediction of different models are shown below:
+
+```{r weekpredict}
+Demo_df[9:10,c(11:16)] %>% kableExtra::kable(col.names = c("Actual Bike Demand","Full Linear Model","Reduced Linear Model","Decision Tree","Grid Search Random Forest","Random Forest"),row.names = FALSE) %>% kableExtra::kable_styling()
+```
+
+We observe that error rate is least in the last column, which is for random forest.
+
+----
+
+### Bike Demand Prediction Accuracy for Holidays and Working Days
+
+We want to validate how well our generated models predict the demand for bikes on Holidays and Working Days.
+
+Sample Input Set:
+
+```{r holiday}
+Demo_df[11:14,c(1:10)] %>% kableExtra::kable(row.names = FALSE) %>% kableExtra::kable_styling()
+```
+
+The prediction of different models are shown below:
+
+```{r holidaypredi}
+Demo_df[11:14,c(11:16)] %>% kableExtra::kable(col.names = c("Actual Bike Demand","Full Linear Model","Reduced Linear Model","Decision Tree","Grid Search Random Forest","Random Forest"),row.names = FALSE) %>% kableExtra::kable_styling()
+```
+
+From the above outputs, we conclude that **Random Forest** works best for all kinds of changes in Dataset.
