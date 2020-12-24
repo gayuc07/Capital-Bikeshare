@@ -86,7 +86,7 @@ The insights which we got from our analysis is that on a normal day, users tend 
 
 Based on our analysis we recommend that during high demand in morning and evening office hours and weekend/holiday, Capital Bikeshare should increase availability during these hours. Thus catering to more users and in turn, securing more profits.
 
-## Refrences
+## References
 
 Motivate International, Inc. (n.d.). Press Kit. Retrieved November 26, 2019, from https://www.capitalbikeshare.com/press-kit.
 
